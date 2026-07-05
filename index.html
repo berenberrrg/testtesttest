@@ -110,6 +110,14 @@
   input[type="text"]:focus {
     border-color: var(--accent);
   }
+  input[type="text"][readonly] {
+    background: var(--bg);
+    color: var(--muted);
+    cursor: default;
+  }
+  input[type="text"][readonly]:focus {
+    border-color: var(--border);
+  }
   .suffix {
     position: absolute;
     right: 16px;
@@ -215,18 +223,26 @@
       </div>
 
       <div class="field">
-        <label for="price">Цена продажи (наличными)</label>
+        <label for="target">Целевая маржа (ориентир)</label>
         <div class="input-wrap">
-          <input type="text" inputmode="decimal" id="price" placeholder="0" autocomplete="off">
+          <input type="text" inputmode="decimal" id="target" value="35" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="rrc">РРЦ (цена при целевой марже)</label>
+        <div class="input-wrap">
+          <input type="text" id="rrc" readonly tabindex="-1">
           <span class="suffix">₽</span>
         </div>
       </div>
 
       <div class="field">
-        <label for="target">Целевая маржа (ориентир)</label>
+        <label for="price">Цена продажи (наличными)</label>
         <div class="input-wrap">
-          <input type="text" inputmode="decimal" id="target" value="35" autocomplete="off">
-          <span class="suffix">%</span>
+          <input type="text" inputmode="decimal" id="price" placeholder="0" autocomplete="off">
+          <span class="suffix">₽</span>
         </div>
       </div>
     </div>
@@ -308,6 +324,7 @@
     </div>
 
     <footer>
+      РРЦ = себестоимость / (1 − целевая маржа).<br>
       Наличные: маржа = (цена − себестоимость) / цена.<br>
       ИП / НДС: цена для клиента = цена наличными / (1 − ставка налога), поэтому после вычета налога с выручки прибыль и маржа остаются такими же, как при наличных.
     </footer>
@@ -317,6 +334,7 @@
   const costEl = document.getElementById('cost');
   const priceEl = document.getElementById('price');
   const targetEl = document.getElementById('target');
+  const rrcEl = document.getElementById('rrc');
   const ipRateEl = document.getElementById('ip-rate');
   const vatRateEl = document.getElementById('vat-rate');
 
@@ -376,6 +394,14 @@
     const target = parseNum(targetEl.value);
     const ipRate = parseNum(ipRateEl.value) / 100;
     const vatRate = parseNum(vatRateEl.value) / 100;
+
+    // РРЦ: цена, которая при данной себестоимости даёт целевую маржу
+    if (isNaN(cost) || isNaN(target) || target >= 100) {
+      rrcEl.value = '';
+    } else {
+      const rrc = cost / (1 - target / 100);
+      rrcEl.value = rrc.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+    }
 
     if (isNaN(cost) || isNaN(price) || price === 0) {
       clearBlock('cash', false);
