@@ -252,7 +252,7 @@
     <div class="card">
       <h2>Оплата на ИП</h2>
       <div class="rate-field">
-        <label for="ip-rate">Наценка / налог с выручки</label>
+        <label for="ip-rate">Налог с выручки</label>
         <div class="input-wrap">
           <input type="text" inputmode="decimal" id="ip-rate" value="8" autocomplete="off">
           <span class="suffix">%</span>
@@ -281,7 +281,7 @@
     <div class="card">
       <h2>Безнал с НДС</h2>
       <div class="rate-field">
-        <label for="vat-rate">Наценка / налог с выручки</label>
+        <label for="vat-rate">Налог с выручки</label>
         <div class="input-wrap">
           <input type="text" inputmode="decimal" id="vat-rate" value="16" autocomplete="off">
           <span class="suffix">%</span>
@@ -309,7 +309,7 @@
 
     <footer>
       Наличные: маржа = (цена − себестоимость) / цена.<br>
-      ИП / НДС: цена для клиента = цена × (1 + ставка), из неё вычитается налог (ставка × цена для клиента), маржа считается от оставшейся выручки.
+      ИП / НДС: цена для клиента = цена наличными / (1 − ставка налога), поэтому после вычета налога с выручки прибыль и маржа остаются такими же, как при наличных.
     </footer>
   </div>
 
@@ -389,25 +389,27 @@
     const cashMargin = (cashProfit / price) * 100;
     renderBlock('cash', price, 0, cashProfit, cashMargin, target, false);
 
-    // ИП
-    if (isNaN(ipRate)) {
+    // ИП — цена подбирается так, чтобы маржа не отличалась от наличных
+    if (isNaN(ipRate) || ipRate >= 1) {
       clearBlock('ip', true);
     } else {
-      const ipClientPrice = price * (1 + ipRate);
+      const ipClientPrice = price / (1 - ipRate);
       const ipTax = ipClientPrice * ipRate;
-      const ipProfit = ipClientPrice - ipTax - cost;
-      const ipMargin = (ipProfit / ipClientPrice) * 100;
+      const ipNetRevenue = ipClientPrice - ipTax;
+      const ipProfit = ipNetRevenue - cost;
+      const ipMargin = (ipProfit / ipNetRevenue) * 100;
       renderBlock('ip', ipClientPrice, ipTax, ipProfit, ipMargin, target, true);
     }
 
-    // НДС
-    if (isNaN(vatRate)) {
+    // НДС — цена подбирается так, чтобы маржа не отличалась от наличных
+    if (isNaN(vatRate) || vatRate >= 1) {
       clearBlock('vat', true);
     } else {
-      const vatClientPrice = price * (1 + vatRate);
+      const vatClientPrice = price / (1 - vatRate);
       const vatTax = vatClientPrice * vatRate;
-      const vatProfit = vatClientPrice - vatTax - cost;
-      const vatMargin = (vatProfit / vatClientPrice) * 100;
+      const vatNetRevenue = vatClientPrice - vatTax;
+      const vatProfit = vatNetRevenue - cost;
+      const vatMargin = (vatProfit / vatNetRevenue) * 100;
       renderBlock('vat', vatClientPrice, vatTax, vatProfit, vatMargin, target, true);
     }
   }
