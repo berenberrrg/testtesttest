@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Калькулятор маржи</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --border: #e5e7eb;
+    --profit: #16a34a;
+    --loss: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121316;
+      --card: #1c1e22;
+      --text: #f2f3f5;
+      --muted: #9ca3af;
+      --border: #2e3136;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px 20px 28px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  p.subtitle {
+    margin: 0 0 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--muted);
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .input-wrap {
+    position: relative;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-size: 20px;
+    padding: 14px 44px 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+  .currency {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .results {
+    margin-top: 20px;
+    display: grid;
+    gap: 12px;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--bg);
+  }
+  .result-row .label {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .result-row .value {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .result-row.main {
+    background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  }
+  .result-row.main .label,
+  .result-row.main .value {
+    color: #fff;
+  }
+  .result-row.main .value {
+    font-size: 28px;
+  }
+  .value.profit { color: var(--profit); }
+  .value.loss { color: var(--loss); }
+  .result-row.main .value.profit,
+  .result-row.main .value.loss {
+    color: #fff;
+  }
+  footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Калькулятор маржи</h1>
+    <p class="subtitle">Себестоимость и цена продажи</p>
+
+    <div class="field">
+      <label for="cost">Себестоимость</label>
+      <div class="input-wrap">
+        <input type="text" inputmode="decimal" id="cost" placeholder="0" autocomplete="off">
+        <span class="currency">₽</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="price">Цена продажи</label>
+      <div class="input-wrap">
+        <input type="text" inputmode="decimal" id="price" placeholder="0" autocomplete="off">
+        <span class="currency">₽</span>
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="result-row main">
+        <span class="label">Маржа</span>
+        <span class="value" id="margin">—</span>
+      </div>
+      <div class="result-row">
+        <span class="label">Наценка</span>
+        <span class="value" id="markup">—</span>
+      </div>
+      <div class="result-row">
+        <span class="label">Прибыль</span>
+        <span class="value" id="profit">—</span>
+      </div>
+    </div>
+
+    <footer>Маржа = (цена − себестоимость) / цена × 100%</footer>
+  </div>
+
+<script>
+  const costEl = document.getElementById('cost');
+  const priceEl = document.getElementById('price');
+  const marginEl = document.getElementById('margin');
+  const markupEl = document.getElementById('markup');
+  const profitEl = document.getElementById('profit');
+
+  function parseNum(str) {
+    if (!str) return NaN;
+    const normalized = str.replace(',', '.').replace(/[^0-9.\-]/g, '');
+    return parseFloat(normalized);
+  }
+
+  function formatMoney(n) {
+    return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+  }
+
+  function formatPercent(n) {
+    return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%';
+  }
+
+  function recalc() {
+    const cost = parseNum(costEl.value);
+    const price = parseNum(priceEl.value);
+
+    if (isNaN(cost) || isNaN(price) || price === 0) {
+      marginEl.textContent = '—';
+      markupEl.textContent = '—';
+      profitEl.textContent = '—';
+      profitEl.classList.remove('profit', 'loss');
+      return;
+    }
+
+    const profit = price - cost;
+    const margin = (profit / price) * 100;
+    const markup = cost !== 0 ? (profit / cost) * 100 : NaN;
+
+    marginEl.textContent = formatPercent(margin);
+    markupEl.textContent = isNaN(markup) ? '—' : formatPercent(markup);
+    profitEl.textContent = formatMoney(profit);
+
+    profitEl.classList.toggle('profit', profit > 0);
+    profitEl.classList.toggle('loss', profit < 0);
+  }
+
+  costEl.addEventListener('input', recalc);
+  priceEl.addEventListener('input', recalc);
+</script>
+</body>
+</html>
