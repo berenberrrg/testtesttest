@@ -15,6 +15,10 @@
     --border: #e5e7eb;
     --profit: #16a34a;
     --loss: #dc2626;
+    --good-bg: #dcfce7;
+    --good-text: #15803d;
+    --bad-bg: #fee2e2;
+    --bad-text: #b91c1c;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -23,6 +27,10 @@
       --text: #f2f3f5;
       --muted: #9ca3af;
       --border: #2e3136;
+      --good-bg: #14351f;
+      --good-text: #4ade80;
+      --bad-bg: #3a1616;
+      --bad-text: #f87171;
     }
   }
   * { box-sizing: border-box; }
@@ -40,12 +48,16 @@
     justify-content: center;
     padding: 24px 16px 60px;
   }
-  .card {
+  .page {
     width: 100%;
     max-width: 420px;
+    display: grid;
+    gap: 16px;
+  }
+  .card {
     background: var(--card);
     border-radius: 20px;
-    padding: 24px 20px 28px;
+    padding: 22px 20px 24px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.08);
   }
   h1 {
@@ -54,10 +66,18 @@
     text-align: center;
   }
   p.subtitle {
-    margin: 0 0 24px;
+    margin: 0 0 8px;
     text-align: center;
     color: var(--muted);
     font-size: 14px;
+  }
+  h2 {
+    font-size: 16px;
+    margin: 0 0 14px;
+  }
+  h2 .rate-badge {
+    font-weight: 600;
+    color: var(--accent);
   }
   label {
     display: block;
@@ -67,7 +87,10 @@
     color: var(--muted);
   }
   .field {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+  }
+  .field:last-child {
+    margin-bottom: 0;
   }
   .input-wrap {
     position: relative;
@@ -87,7 +110,7 @@
   input[type="text"]:focus {
     border-color: var(--accent);
   }
-  .currency {
+  .suffix {
     position: absolute;
     right: 16px;
     top: 50%;
@@ -96,16 +119,38 @@
     font-size: 16px;
     pointer-events: none;
   }
+  .rate-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .rate-field label {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  .rate-field .input-wrap {
+    width: 96px;
+    flex-shrink: 0;
+  }
+  .rate-field input[type="text"] {
+    font-size: 16px;
+    padding: 10px 32px 10px 12px;
+    text-align: right;
+  }
+  .rate-field .suffix {
+    right: 12px;
+    font-size: 14px;
+  }
   .results {
-    margin-top: 20px;
     display: grid;
-    gap: 12px;
+    gap: 10px;
   }
   .result-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 14px 16px;
+    padding: 13px 16px;
     border-radius: 14px;
     background: var(--bg);
   }
@@ -114,27 +159,40 @@
     color: var(--muted);
   }
   .result-row .value {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 700;
   }
   .result-row.main {
     background: linear-gradient(135deg, var(--accent), #1d4ed8);
   }
-  .result-row.main .label,
-  .result-row.main .value {
-    color: #fff;
+  .result-row.main .label {
+    color: rgba(255,255,255,0.85);
   }
   .result-row.main .value {
-    font-size: 28px;
+    color: #fff;
+    font-size: 26px;
   }
   .value.profit { color: var(--profit); }
   .value.loss { color: var(--loss); }
-  .result-row.main .value.profit,
-  .result-row.main .value.loss {
+  .margin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .margin-badge.good { background: var(--good-bg); color: var(--good-text); }
+  .margin-badge.bad { background: var(--bad-bg); color: var(--bad-text); }
+  .result-row.main .margin-badge {
+    background: rgba(255,255,255,0.2);
     color: #fff;
   }
   footer {
-    margin-top: 20px;
+    margin-top: 4px;
     text-align: center;
     font-size: 12px;
     color: var(--muted);
@@ -142,50 +200,125 @@
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Калькулятор маржи</h1>
-    <p class="subtitle">Себестоимость и цена продажи</p>
+  <div class="page">
 
-    <div class="field">
-      <label for="cost">Себестоимость</label>
-      <div class="input-wrap">
-        <input type="text" inputmode="decimal" id="cost" placeholder="0" autocomplete="off">
-        <span class="currency">₽</span>
+    <div class="card">
+      <h1>Калькулятор маржи</h1>
+      <p class="subtitle">Себестоимость, цена и способ оплаты</p>
+
+      <div class="field">
+        <label for="cost">Себестоимость</label>
+        <div class="input-wrap">
+          <input type="text" inputmode="decimal" id="cost" placeholder="0" autocomplete="off">
+          <span class="suffix">₽</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="price">Цена продажи (наличными)</label>
+        <div class="input-wrap">
+          <input type="text" inputmode="decimal" id="price" placeholder="0" autocomplete="off">
+          <span class="suffix">₽</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="target">Целевая маржа (ориентир)</label>
+        <div class="input-wrap">
+          <input type="text" inputmode="decimal" id="target" value="35" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
       </div>
     </div>
 
-    <div class="field">
-      <label for="price">Цена продажи</label>
-      <div class="input-wrap">
-        <input type="text" inputmode="decimal" id="price" placeholder="0" autocomplete="off">
-        <span class="currency">₽</span>
+    <div class="card">
+      <h2>Наличные</h2>
+      <div class="results">
+        <div class="result-row main">
+          <span class="label">Маржа<span class="margin-badge" id="cash-badge"></span></span>
+          <span class="value" id="cash-margin">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Цена для клиента</span>
+          <span class="value" id="cash-price">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Прибыль</span>
+          <span class="value" id="cash-profit">—</span>
+        </div>
       </div>
     </div>
 
-    <div class="results">
-      <div class="result-row main">
-        <span class="label">Маржа</span>
-        <span class="value" id="margin">—</span>
+    <div class="card">
+      <h2>Оплата на ИП</h2>
+      <div class="rate-field">
+        <label for="ip-rate">Наценка / налог с выручки</label>
+        <div class="input-wrap">
+          <input type="text" inputmode="decimal" id="ip-rate" value="8" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
       </div>
-      <div class="result-row">
-        <span class="label">Наценка</span>
-        <span class="value" id="markup">—</span>
-      </div>
-      <div class="result-row">
-        <span class="label">Прибыль</span>
-        <span class="value" id="profit">—</span>
+      <div class="results">
+        <div class="result-row main">
+          <span class="label">Маржа<span class="margin-badge" id="ip-badge"></span></span>
+          <span class="value" id="ip-margin">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Цена для клиента</span>
+          <span class="value" id="ip-price">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Налог с выручки</span>
+          <span class="value" id="ip-tax">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Прибыль</span>
+          <span class="value" id="ip-profit">—</span>
+        </div>
       </div>
     </div>
 
-    <footer>Маржа = (цена − себестоимость) / цена × 100%</footer>
+    <div class="card">
+      <h2>Безнал с НДС</h2>
+      <div class="rate-field">
+        <label for="vat-rate">Наценка / налог с выручки</label>
+        <div class="input-wrap">
+          <input type="text" inputmode="decimal" id="vat-rate" value="16" autocomplete="off">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+      <div class="results">
+        <div class="result-row main">
+          <span class="label">Маржа<span class="margin-badge" id="vat-badge"></span></span>
+          <span class="value" id="vat-margin">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Цена для клиента</span>
+          <span class="value" id="vat-price">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Налог с выручки</span>
+          <span class="value" id="vat-tax">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Прибыль</span>
+          <span class="value" id="vat-profit">—</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Наличные: маржа = (цена − себестоимость) / цена.<br>
+      ИП / НДС: цена для клиента = цена × (1 + ставка), из неё вычитается налог (ставка × цена для клиента), маржа считается от оставшейся выручки.
+    </footer>
   </div>
 
 <script>
   const costEl = document.getElementById('cost');
   const priceEl = document.getElementById('price');
-  const marginEl = document.getElementById('margin');
-  const markupEl = document.getElementById('markup');
-  const profitEl = document.getElementById('profit');
+  const targetEl = document.getElementById('target');
+  const ipRateEl = document.getElementById('ip-rate');
+  const vatRateEl = document.getElementById('vat-rate');
 
   function parseNum(str) {
     if (!str) return NaN;
@@ -201,32 +334,89 @@
     return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%';
   }
 
+  function clearBlock(prefix, hasRate) {
+    document.getElementById(prefix + '-margin').textContent = '—';
+    document.getElementById(prefix + '-price').textContent = '—';
+    document.getElementById(prefix + '-profit').textContent = '—';
+    document.getElementById(prefix + '-profit').classList.remove('profit', 'loss');
+    document.getElementById(prefix + '-badge').textContent = '';
+    document.getElementById(prefix + '-badge').className = 'margin-badge';
+    if (hasRate) {
+      document.getElementById(prefix + '-tax').textContent = '—';
+    }
+  }
+
+  function renderBlock(prefix, clientPrice, tax, profit, margin, target, hasRate) {
+    document.getElementById(prefix + '-margin').textContent = formatPercent(margin);
+    document.getElementById(prefix + '-price').textContent = formatMoney(clientPrice);
+
+    const profitEl = document.getElementById(prefix + '-profit');
+    profitEl.textContent = formatMoney(profit);
+    profitEl.classList.toggle('profit', profit > 0);
+    profitEl.classList.toggle('loss', profit < 0);
+
+    if (hasRate) {
+      document.getElementById(prefix + '-tax').textContent = formatMoney(tax);
+    }
+
+    const badge = document.getElementById(prefix + '-badge');
+    if (!isNaN(target)) {
+      const diff = margin - target;
+      badge.textContent = (diff >= 0 ? '▲ ' : '▼ ') + formatPercent(Math.abs(diff));
+      badge.className = 'margin-badge ' + (diff >= 0 ? 'good' : 'bad');
+    } else {
+      badge.textContent = '';
+      badge.className = 'margin-badge';
+    }
+  }
+
   function recalc() {
     const cost = parseNum(costEl.value);
     const price = parseNum(priceEl.value);
+    const target = parseNum(targetEl.value);
+    const ipRate = parseNum(ipRateEl.value) / 100;
+    const vatRate = parseNum(vatRateEl.value) / 100;
 
     if (isNaN(cost) || isNaN(price) || price === 0) {
-      marginEl.textContent = '—';
-      markupEl.textContent = '—';
-      profitEl.textContent = '—';
-      profitEl.classList.remove('profit', 'loss');
+      clearBlock('cash', false);
+      clearBlock('ip', true);
+      clearBlock('vat', true);
       return;
     }
 
-    const profit = price - cost;
-    const margin = (profit / price) * 100;
-    const markup = cost !== 0 ? (profit / cost) * 100 : NaN;
+    // Наличные
+    const cashProfit = price - cost;
+    const cashMargin = (cashProfit / price) * 100;
+    renderBlock('cash', price, 0, cashProfit, cashMargin, target, false);
 
-    marginEl.textContent = formatPercent(margin);
-    markupEl.textContent = isNaN(markup) ? '—' : formatPercent(markup);
-    profitEl.textContent = formatMoney(profit);
+    // ИП
+    if (isNaN(ipRate)) {
+      clearBlock('ip', true);
+    } else {
+      const ipClientPrice = price * (1 + ipRate);
+      const ipTax = ipClientPrice * ipRate;
+      const ipProfit = ipClientPrice - ipTax - cost;
+      const ipMargin = (ipProfit / ipClientPrice) * 100;
+      renderBlock('ip', ipClientPrice, ipTax, ipProfit, ipMargin, target, true);
+    }
 
-    profitEl.classList.toggle('profit', profit > 0);
-    profitEl.classList.toggle('loss', profit < 0);
+    // НДС
+    if (isNaN(vatRate)) {
+      clearBlock('vat', true);
+    } else {
+      const vatClientPrice = price * (1 + vatRate);
+      const vatTax = vatClientPrice * vatRate;
+      const vatProfit = vatClientPrice - vatTax - cost;
+      const vatMargin = (vatProfit / vatClientPrice) * 100;
+      renderBlock('vat', vatClientPrice, vatTax, vatProfit, vatMargin, target, true);
+    }
   }
 
-  costEl.addEventListener('input', recalc);
-  priceEl.addEventListener('input', recalc);
+  [costEl, priceEl, targetEl, ipRateEl, vatRateEl].forEach(el => {
+    el.addEventListener('input', recalc);
+  });
+
+  recalc();
 </script>
 </body>
 </html>
